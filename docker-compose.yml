@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  backend:
+    build: ./back
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      DB_DATABASE: authdb
+      JWT_SECRET: supersecretkey2026
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  frontend-build:  # ✅ Отдельный сервис для сборки
+    build: ./front
+    volumes:
+      - frontend-build:/app/dist  # Копируем dist в volume
+
+  nginx:  # ✅ Отдельный сервис
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - frontend-build:/usr/share/nginx/html  # Берем готовый dist
+    depends_on:
+      - backend
+      - frontend-build  # Ждем сборки
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+  frontend-build:  # Named volume для dist файлов
+
+networks:
+  app-network:
+    driver: bridge
