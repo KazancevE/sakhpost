@@ -12,22 +12,36 @@ interface AuthContextType {
   login: (token: string) => void;
   logout: () => void;
   isAdmin: boolean;
+  initializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ userId: payload.sub, email: payload.email, role: payload.role });
-      } catch {}
+        setUser({
+          userId: payload.sub,
+          email: payload.email,
+          role: payload.role,
+        });
+      } catch {
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
+      }
     }
+
+    setInitializing(false);
   }, []);
 
   const login = (token: string) => {
@@ -43,15 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin: user?.role === 'admin' }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user,
+    login,
+    logout,
+    isAdmin: user?.role === 'admin',
+    initializing,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (undefined === context) throw new Error('useAuth must be inside AuthProvider');
+  if (context === undefined) throw new Error('useAuth must be inside AuthProvider');
   return context;
 };

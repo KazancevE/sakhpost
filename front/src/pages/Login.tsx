@@ -32,12 +32,14 @@ export function Login() {
 
   return (
     <Center style={{ height: '100vh' }}>
-      <form onSubmit={form.onSubmit(handleSubmit)} style={{ width: 300 }}>
+      <form onSubmit={form.onSubmit(handleSubmit)} style={{ width: 300 }} className='login-form'>
         <Title order={2}>Login</Title>
-        <TextInput mt="md" label="Email" {...form.getInputProps('email')} />
-        <TextInput mt="md" type="password" label="Password" {...form.getInputProps('password')} />
-        <Button fullWidth mt="md" type="submit" loading={loading}>Login</Button>
-        <Anchor mt="md" href="/register">Register</Anchor>
+        <TextInput mt="md" label="Email"  {...form.getInputProps('email')} />
+        <TextInput mt="md" type="password"  label="Password" {...form.getInputProps('password')} />
+        <div className="form-footer">
+          <Button fullWidth mt="md" type="submit" loading={loading}>Login</Button>
+          <Anchor  mt="md" href="/register">Register</Anchor>
+        </div>
       </form>
     </Center>
   );

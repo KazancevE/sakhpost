@@ -58,7 +58,6 @@ export function Profile() {
       <Group mt="md">
         <TextInput
           placeholder="Search email..."
-          leftSection={<IconSearch size={14} />}
           value={search}
           onChange={(event) => {
             setSearch(event.currentTarget.value);
